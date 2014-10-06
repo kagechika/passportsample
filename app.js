@@ -1,4 +1,5 @@
 var express = require('express');
+var session = require('express-session');
 var path = require('path');
 var favicon = require('serve-favicon');
 var logger = require('morgan');
@@ -8,7 +9,33 @@ var bodyParser = require('body-parser');
 var routes = require('./routes/index');
 var users = require('./routes/users');
 
+//
+// setting passport
+//
+var passport = require("passport"),
+    twStrategy = require("passport-twitter").Strategy;
+
+//
+// use passport
+// 
+passport.use(new twStrategy({
+        consumerKey: "xUUgA2PeFR1mEJB98OdQgKULD",
+        consumerSecret: "iu6HUO20an46qV55diQtlvyj6mOfWIIqVoI11KAGyWaqzzrZ49",
+        callbackURL: "http://ec2-54-64-144-22.ap-northeast-1.compute.amazonaws.com/auth/twitter/callback"
+    },
+    function(token, tokenSecret, profile, done){
+        profile.twitter_token = token;
+        profile.twitter_token_secret = tokenSecret;
+        
+        process.nextTick(function(){
+            return done(null, profile);
+        });
+    }
+));
+
+
 var app = express();
+
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -20,11 +47,26 @@ app.set('port', process.env.PORT || 50000);
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.use(cookieParser());
+app.use(session({secret:"keyboard cat"}));
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.use('/', routes);
 app.use('/users', users);
+
+//
+// routing
+//
+app.get("/auth/twitter", passport.authenticate("twitter"));
+app.get("/auth/twitter/callback", 
+    passport.authenticate("twitter", {
+        successRedirect: "/users",
+        failureRedirect: "/login"
+    }
+));
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
