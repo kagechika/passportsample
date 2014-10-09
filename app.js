@@ -6,12 +6,11 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
-var routes = require('./routes/index');
+var routes = require('./routes');
 var users = require('./routes/users');
 
 //
 // setting passport
-//
 var passport = require("passport"),
     twStrategy = require("passport-twitter").Strategy;
 
@@ -21,7 +20,7 @@ var passport = require("passport"),
 passport.use(new twStrategy({
         consumerKey: "xUUgA2PeFR1mEJB98OdQgKULD",
         consumerSecret: "iu6HUO20an46qV55diQtlvyj6mOfWIIqVoI11KAGyWaqzzrZ49",
-        callbackURL: "http://ec2-54-64-144-22.ap-northeast-1.compute.amazonaws.com/auth/twitter/callback"
+        callbackURL: "http://ec2-54-64-244-21.ap-northeast-1.compute.amazonaws.com:50000/auth/twitter/callback"
     },
     function(token, tokenSecret, profile, done){
         profile.twitter_token = token;
@@ -50,16 +49,27 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(cookieParser());
-app.use(session({secret:"keyboard cat"}));
+app.use(session({secret:"keyboard cat", saveUninitialized: true, resave: true}));
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.use('/', routes);
-app.use('/users', users);
+//
+// passport session setup
+//
+passport.serializeUser(function(user, done){
+    done(null, user);
+});
+
+passport.deserializeUser(function(user, done){
+    done(null, user);
+});
 
 //
 // routing
 //
+app.get('/', routes.index);
+app.get('/login', routes.login);
+app.get('/users', users.list);
 app.get("/auth/twitter", passport.authenticate("twitter"));
 app.get("/auth/twitter/callback", 
     passport.authenticate("twitter", {
