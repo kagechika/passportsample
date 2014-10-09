@@ -8,6 +8,6 @@
 
 //module.exports = router;
 exports.list = function(req, res){
-    res.send('respond with a resource');
+    res.render('users', { username:req.user.username, profile_image:req.user.photos[0].value });
 }
 
