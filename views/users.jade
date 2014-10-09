@@ -7,3 +7,19 @@ block content
 
     hr
     a(href="/") go to top page.
+
+script(type='text/javascript').
+    var user = '#{username}';
+    var socket;
+    $(function(){
+        socket = io.connect();
+        socket.emit('login', user);
+        socket.on('updateLoginUsers', function(users){
+            console.log('updateLoginUsers# users='+users);
+            updateLoginUsers(users);
+        });
+    });
+
+    function updateLoginUsers(users){
+        console.log(users);
+    }
